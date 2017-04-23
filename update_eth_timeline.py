@@ -28,8 +28,8 @@ def get_closes(api = k, interval = 1):
         times.append(entry[0])
         closes.append(eval(entry[4]))
     
-    if os.path.isfile('C:/Users/Georg/Desktop/results.txt'):
-        old_file = numpy.loadtxt('C:/Users/Georg/Desktop/results.txt')
+    if os.path.isfile('results.txt'):
+        old_file = numpy.loadtxt('results.txt')
         old_times = old_file[0]
         old_closes = old_file[1] 
         old_max_time = old_times.max()
@@ -59,7 +59,7 @@ def update_price(wait = 60):
     while(abort == False):
         times,closes = get_closes()
         time_closes_array = numpy.array([times,closes])
-        numpy.savetxt('C:/Users/Georg/Desktop/results.txt',time_closes_array)
+        numpy.savetxt('results.txt',time_closes_array)
         max_time = max(times)
         days = []
         for utime in times:
@@ -67,7 +67,7 @@ def update_price(wait = 60):
         pylab.close('all')
         pylab.plot(days, closes)        
         pylab.xlabel('days')
-        pylab.savefig('C:/Users/Georg/Desktop/results.jpg', dpi = 300)
+        pylab.savefig('results.jpg', dpi = 300)
         print('prices updated')
         time0 = time.time()
         while time.time() - time0 < wait:
@@ -81,5 +81,5 @@ def update_price(wait = 60):
         
 
 update_thread = threading.Thread(target = update_price)
-update_thread.start()
+#update_thread.start()
     
