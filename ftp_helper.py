@@ -19,9 +19,9 @@ def upload_to_ftp(server = None, user = None, password = None, filepath = None, 
     if server == None or user == None or password == None or filepath == None or serverpath == None:
         print("Information missing. Aborting.")
         return
-    session = ftplib.FPT(server, user, password)
+    session = ftplib.FTP(server, user, password)
     file = open(filepath, 'rb')
-    session.storbinary('STOR '+serverpath)
+    session.storbinary('STOR '+serverpath, file)
     file.close()
     session.quit()
     
@@ -30,5 +30,3 @@ def download_via_url(url = None, localpath = None):
         print("Information missing. Aborting.")
         return
     urllib.request.urlretrieve(url, filename=localpath)
-
-print('test')

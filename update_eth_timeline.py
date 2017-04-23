@@ -11,6 +11,7 @@ import os
 import time
 import threading
 import matplotlib.pylab as pylab
+import ftp_helper as ftp
 
 k = krakenex.API() #paloaltomünster
 c = krakenex.Connection()
@@ -18,9 +19,12 @@ c = krakenex.Connection()
 assetpairs = k.query_public('AssetPairs')['result']
 asset_ = 'XETHZEUR'    
 asset = assetpairs[asset_]
+ftp_server = 'zeiselmair.de'
+user = 'web72'
+password = 'es2RUR89'
 
-def get_closes(api = k, interval = 1):
-    timeline_raw = k.query_public('OHLC', req = {'pair':asset_, 'interval':1})['result'][asset_]
+def get_closes(api = k, interval = 1, filename = 'results.txt'):
+    timeline_raw = k.query_public('OHLC', req = {'pair':asset_, 'interval':interval})['result'][asset_]
     times = []
     closes = []
     
@@ -28,8 +32,8 @@ def get_closes(api = k, interval = 1):
         times.append(entry[0])
         closes.append(eval(entry[4]))
     
-    if os.path.isfile('results.txt'):
-        old_file = numpy.loadtxt('results.txt')
+    if os.path.isfile(filename):
+        old_file = numpy.loadtxt(filename)
         old_times = old_file[0]
         old_closes = old_file[1] 
         old_max_time = old_times.max()
@@ -52,14 +56,18 @@ def get_closes(api = k, interval = 1):
             new_closes.append(closes[i])
     print('Closes cached')
     return new_times, new_closes
+
+
         
 abort = False        
-def update_price(wait = 60):
+def update_price(wait = 90, loop = True, filename = 'results', interval = 1):
     global abort
     while(abort == False):
-        times,closes = get_closes()
+        if loop == False:
+            abort = True
+        times,closes = get_closes(interval = interval, filename=filename + '.txt')
         time_closes_array = numpy.array([times,closes])
-        numpy.savetxt('results.txt',time_closes_array)
+        numpy.savetxt(filename + '.txt',time_closes_array)
         max_time = max(times)
         days = []
         for utime in times:
@@ -67,7 +75,7 @@ def update_price(wait = 60):
         pylab.close('all')
         pylab.plot(days, closes)        
         pylab.xlabel('days')
-        pylab.savefig('results.jpg', dpi = 300)
+        pylab.savefig(filename + '.jpg', dpi = 300)
         print('prices updated')
         time0 = time.time()
         while time.time() - time0 < wait:
@@ -79,7 +87,25 @@ def update_price(wait = 60):
                 break
         "Updating finished"
         
+def upload_file(wait = 90, ftp_server = ftp_server, user = user, password = password, filepath = 'results.txt', serverpath = 'html/h4ckamuenster/results.txt'):
+    global abort
+    while(abort == False):
+        if os.path.isfile(filepath):
+            ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath)
+            print("File updated.")
+            time0 = time.time()
+            while time.time() - time0 < wait:
+                if(abort == False):
+                    time.sleep(10)
+                else:
+                    print("aborted")
+                    break
+        else:
+            print("No such file.")
+            time.sleep(2)
+            pass
+        
 
 update_thread = threading.Thread(target = update_price)
-#update_thread.start()
+upload_thread = threading.Thread(target = upload_file)
     
