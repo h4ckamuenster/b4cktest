@@ -4,10 +4,6 @@ import matplotlib.pyplot as plt
 import copy
 import time
 
-#################################
-# DONT CHANGE: IT WORKS
-# Date: 23.4.2017
-#################################
 
 class myBacktest_SMA(object):
 
