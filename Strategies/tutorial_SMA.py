@@ -20,17 +20,13 @@ Investment = 1000
 window = 3000
 
 
-Test_SMA = myBacktest_SMA(Btc_series,Investment)
-Test_Re = myBacktest_SMAreinvest(Btc_series,Investment)
-
-rolling = Btc_series.rolling(window).mean()
+Test_SMA = myBacktest_SMA(Btc_series, Investment)
+Test_Re = myBacktest_SMAreinvest(Btc_series, Investment)
 
 print('SMA')
 portf_SMA, gain_SMA, shares_SMA, trades_SMA = Test_SMA.returnSMA(window)
 print('reinvest = max gain')
 portf_Re, shares_Re, trades_Re = Test_SMA.returnSMA(window)
-
-
 
 
 def plot_all():
@@ -41,10 +37,10 @@ def plot_all():
 
     plt.figure(3)
     plt.plot(trades_SMA)
-    plt.plot(trades_Re)
+   # plt.plot(trades_Re)
     plt.figure(4)
     plt.plot(portf_SMA)
-    plt.plot(portf_Re)
+    #plt.plot(portf_Re)
 
     plt.show()
 
