@@ -44,6 +44,27 @@ def plot_all():
 
     plt.show()
 
+mean = new_BTC.rolling(500000).mean();
 
 
+def plot_all():
 
+    plt.figure(1)
+    new_BTC.plot()
+    mean_long.plot()
+    mean_short.plot()
+
+    plt.figure(2)
+    portfolio.plot()
+   # plt.plot(trades_Re)
+    plt.figure(3)
+    trades.plot()
+    #plt.plot(portf_Re)
+
+    plt.show()
+
+def delete_all():
+    del portfolio
+    del shares
+    del trades
+    del gain

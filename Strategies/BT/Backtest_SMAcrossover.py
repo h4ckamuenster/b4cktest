@@ -9,9 +9,10 @@ import time
 # Date: 23.4.2017
 #################################
 
-class myBacktest_SMA(object):
+class myBacktest_SMA_crossOver(object):
 
     def __init__(self, time_series, investment=1000, transaction_fee=0.0):
+        ''' maker or taker fee is to set'''
 
         self.__time_series = time_series
         self.__shares = np.zeros(len(self.__time_series))
@@ -26,16 +27,26 @@ class myBacktest_SMA(object):
         self.__winMin = []
         self.__winMax = []
         self.__interval = []
+        self.__window_long = []
+        self.__window_short = []
+        self.__long_mean =[]
+        self.__short_mean = []
         self.__current_fee =[]
         self.__position = False
 
-    def getRollingMean(self):
-        self.__rolling_mean = self.__time_series.rolling(self.__window).mean()
-        return pd.DataFrame(self.__rolling_mean, columns=['Rolling Mean'])
+    def __getRollingMean(self,__window):
+        __rolling_mean = self.__time_series.rolling(__window).mean()
+        return __rolling_mean
 
-    def getRollingStd(self):
+    def returnRollingStd(self):
         __rol_std = self.__time_series.rolling(self.__window).std()
         return pd.DataFrame(__rol_std, columns=['Rolling Std'])
+
+    def returnRollingMean(self, window):
+        print(window)
+        __rolling_mean = self.__getRollingMean(window)
+        __rolling_df = pd.DataFrame(__rolling_mean)
+        return __rolling_df
 
     def __enterMarket(self,pos):
         self.__current_fee = self.__investment * self.__transaction_fee
@@ -67,14 +78,15 @@ class myBacktest_SMA(object):
         self.__position = False  # we are out of the game
 
 
-    def SMA(self):
+    def SMA_crossOver(self):
         # computes the portfolio according to simple moving average, uses only ShortMean()
 
-        self.getRollingMean()
+        self.__long_mean = self.__getRollingMean(self.__window_long)
+        self.__short_mean = self.__getRollingMean(self.__window_short)
 
-        for i in range((self.__window+1), len(self.__time_series)):        ## hier muss noch was rein, um von beliebigem index zu starten
+        for i in range((self.__window_long+1), len(self.__time_series)):        ## hier muss noch was rein, um von beliebigem index zu starten
            # print(i, self.__trades[i])
-            if self.__time_series[i] > self.__rolling_mean[i]:
+            if self.__short_mean[i] > self.__long_mean[i-1]:
                 if self.__position == False:
                     # our position is short and we want to buy
                     self.__enterMarket(i)
@@ -82,7 +94,7 @@ class myBacktest_SMA(object):
                     # we hold a position and don't want to sell: portfolio is increasing
                     self.__updatePortfolio(i)
 
-            elif self.__time_series[i] <= self.__rolling_mean[i]:
+            elif self.__short_mean[i] <= self.__long_mean[i-1]:
                 if self.__position == True:
                     # we should get out of the market and sell:
                     self.__exitMarket(i)
@@ -92,17 +104,18 @@ class myBacktest_SMA(object):
         print("nach SMA: ", self.__portfolio)
 
 
-       ## pd.DataFrame.to_csv(pd.DataFrame(self.__portfolio),'Portfolio.csv')
-
-    def returnSMA(self, window):
+    def returnSMA_crossOver(self, window_long, window_short = 1):
+        ''' if short = 1 --> cross over with time series!'''
         '''returns: portfolio, gain, shares, trades in DataFrame format'''
-        self.__window = window
-        print("Window: ",  self.__window )
-        self.SMA()
+        self.__window_long = window_long
+        self.__window_short = window_short
+
+        #print("Window: ",  self.__window )
+        self.SMA_crossOver()
         return pd.DataFrame(self.__portfolio, columns=['portfolio']), pd.DataFrame(self.__gain, columns=['gain']), \
                pd.DataFrame(self.__shares, columns=['shares']), pd.DataFrame(self.__trades, columns=['trades'])
 
-
+## update from here!
     def optimize_SMA(self,Min,Max,interval):
         '''should optimize the window for the best SMA'''
 
@@ -142,4 +155,3 @@ class myBacktest_SMA(object):
 
         return  pd.DataFrame(__best_portfolio, columns=['best_portfolio']), pd.DataFrame(__best_gain) ,pd.DataFrame(__best_shares),  \
                 pd.DataFrame(__best_trades),  __bestWindow
-

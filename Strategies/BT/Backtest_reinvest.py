@@ -77,8 +77,8 @@ class myBacktest_SMAreinvest(object):
 
         self.getRollingMean()
 
-        for i in range(self.__window, len(self.__time_series)):        ## hier muss noch was rein, um von beliebigem index zu starten
-            if self.__time_series[i] > self.__short_mean[i]:
+        for i in range((self.__window +1), len(self.__time_series)):        ## hier muss noch was rein, um von beliebigem index zu starten
+            if self.__time_series[i] > self.__short_mean[i-1]:
                 if self.__position == False:
                     # our position is short and we want to buy
                     self.__enterMarket(i)
@@ -86,7 +86,7 @@ class myBacktest_SMAreinvest(object):
                     # we hold a position and don't want to sell: portfolio is increasing
                     self.__updatePortfolio(i)
 
-            elif self.__time_series[i] <= self.__short_mean[i]:
+            elif self.__time_series[i] <= self.__short_mean[i-1]:
                 if self.__position == True:
                     # we should get out of the market and sell:
                     self.__exitMarket(i)
@@ -123,7 +123,7 @@ class myBacktest_SMAreinvest(object):
         for i in range(__Min,__Max,__interval):
 
             self.__window = i
-            #print("window: " + self.__window)
+            print("window: ", self.__window)
             ## ******************
             self.SMA()
             ## ******************
