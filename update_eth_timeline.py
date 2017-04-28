@@ -91,6 +91,10 @@ def update_price(wait = 90, loop = True, filename = 'results', interval = 1):
                 print("aborted")
                 break
         "Updating finished"
+
+ftp_server = ''
+user = ''
+password = ''
         
 def upload_file(wait = 90, ftp_server = ftp_server, user = user, password = password, filepath = 'results.txt', serverpath = 'results.txt'):
     global abort
