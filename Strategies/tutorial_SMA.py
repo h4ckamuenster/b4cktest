@@ -7,6 +7,7 @@ import copy
 
 from BT.Backtest_SMA import myBacktest_SMA
 from BT.Backtest_reinvest import myBacktest_SMAreinvest
+from BT.Backtest_SMAcrossover import myBacktest_SMA_crossOver
 
 # get the raw data
 
@@ -22,11 +23,16 @@ window = 3000
 
 Test_SMA = myBacktest_SMA(Btc_series, Investment)
 Test_Re = myBacktest_SMAreinvest(Btc_series, Investment)
+Test_crossOVer = myBacktest_SMA_crossOver(Btc_series, 1000)
+
 
 print('SMA')
 portf_SMA, gain_SMA, shares_SMA, trades_SMA = Test_SMA.returnSMA(window)
 print('reinvest = max gain')
 portf_Re, shares_Re, trades_Re = Test_SMA.returnSMA(window)
+
+
+
 
 
 def plot_all():
