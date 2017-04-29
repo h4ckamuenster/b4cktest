@@ -27,7 +27,6 @@ def get_closes(api = k, interval = 1, filename = 'results.txt'):
         try:
             timeline_raw = k.query_public('OHLC', req = {'pair':asset_, 'interval':interval})['result'][asset_]
         except:
-            print('reconnecting...')
             k = krakenex.API() #paloaltomünster
             c = krakenex.Connection()
             time.sleep(10)
