@@ -12,6 +12,8 @@ import time
 import threading
 import matplotlib.pylab as pylab
 import ftp_helper as ftp
+import tkinter as tk
+from tkinter import filedialog
 
 k = krakenex.API() #paloaltomünster
 c = krakenex.Connection()
@@ -98,6 +100,16 @@ password = ''
         
 def upload_file(wait = 90, ftp_server = ftp_server, user = user, password = password, filepath = 'results.txt', serverpath = 'results.txt'):
     global abort
+    root = tk.Tk()
+    root.withdraw()
+    chosen_file_path = filedialog.askopenfilename()
+    file = open(chosen_file_path)
+    lines = []
+    for line in file:
+        lines.append(line)
+    ftp_server = lines[0].split('\n')[0]
+    user = lines[1].split('\n')[0]
+    password = lines[2]
     while(abort == False):
         if os.path.isfile(filepath):
             ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath)
@@ -116,5 +128,5 @@ def upload_file(wait = 90, ftp_server = ftp_server, user = user, password = pass
         
 
 update_thread = threading.Thread(target = update_price)
-#upload_thread = threading.Thread(target = upload_file)
+upload_thread = threading.Thread(target = upload_file)
     
