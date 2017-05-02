@@ -22,6 +22,8 @@ assetpairs = k.query_public('AssetPairs')['result']
 asset_ = 'XETHZEUR'    
 asset = assetpairs[asset_]
 
+file_busy = False
+changes_done = False
 
 def get_closes(api = k, interval = 1, filename = 'results.txt'):
     timeline_raw = None
@@ -69,12 +71,21 @@ def get_closes(api = k, interval = 1, filename = 'results.txt'):
 abort = False        
 def update_price(wait = 90, loop = True, filename = 'results', interval = 1):
     global abort
+    global file_busy
+    global changes_done
     while(abort == False):
         if loop == False:
             abort = True
         times,closes = get_closes(interval = interval, filename=filename + '.txt')
         time_closes_array = numpy.array([times,closes])
-        numpy.savetxt(filename + '.txt',time_closes_array)
+        while(file_busy == True):
+            time.sleep(5)
+            print("File busy. Update waiting...")
+        if file_busy == False:
+            file_busy = True
+            numpy.savetxt(filename + '.txt',time_closes_array)
+            changes_done = True
+            file_busy = False
         max_time = max(times)
         days = []
         for utime in times:
@@ -92,7 +103,7 @@ def update_price(wait = 90, loop = True, filename = 'results', interval = 1):
             else:
                 print("aborted")
                 break
-        "Updating finished"
+        print("Updating finished")
 
 ftp_server = ''
 user = ''
@@ -100,6 +111,8 @@ password = ''
         
 def upload_file(wait = 90, ftp_server = ftp_server, user = user, password = password, filepath = 'results.txt', serverpath = 'results.txt'):
     global abort
+    global file_busy
+    global changes_done
     root = tk.Tk()
     root.withdraw()
     chosen_file_path = filedialog.askopenfilename()
@@ -112,8 +125,14 @@ def upload_file(wait = 90, ftp_server = ftp_server, user = user, password = pass
     password = lines[2]
     while(abort == False):
         if os.path.isfile(filepath):
-            ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath)
-            print("File updated.")
+            while(file_busy == True):
+                time.sleep(5)
+                print("File busy. Upload waiting...")
+            if file_busy == False and changes_done == True:
+                file_busy = True
+                ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath)
+                print("File updated.")
+                file_busy = False
             time0 = time.time()
             while time.time() - time0 < wait:
                 if(abort == False):
