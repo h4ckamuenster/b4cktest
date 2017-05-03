@@ -101,14 +101,13 @@ def update_price(wait = 90, loop = True, filename = 'results', interval = 1):
                 time.sleep(10)                
             else:
                 print("aborted")
-                break
-        print("Updating finished")
+                break        
 
 ftp_server = ''
 user = ''
 password = ''
         
-def upload_file(wait = 90, ftp_server = ftp_server, user = user, password = password, filepath = 'results.txt', serverpath = 'results.txt'):
+def upload_file(wait = 180, ftp_server = ftp_server, user = user, password = password, filepath = 'results.txt', serverpath = 'results.txt'):
     global abort
     global file_busy
     global file_upload_rdy
@@ -122,6 +121,10 @@ def upload_file(wait = 90, ftp_server = ftp_server, user = user, password = pass
     ftp_server = lines[0].split('\n')[0]
     user = lines[1].split('\n')[0]
     password = lines[2]
+    print("Preparing first upload...")
+    ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath)
+    print("File uploaded.")
+    file_upload_rdy = True
     while(abort == False):
         if os.path.isfile(filepath):
             while(file_busy == True):
@@ -129,9 +132,11 @@ def upload_file(wait = 90, ftp_server = ftp_server, user = user, password = pass
                 print("File busy. Upload waiting...")
             if file_busy == False:
                 file_busy = True
-                ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath)
-                print("File updated.")
-                file_upload_rdy = True
+                try:
+                    ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath)
+                    print("File uploaded.")
+                except:
+                    print("Could not upload file. Retry in " + str(wait) + " seconds...")
                 file_busy = False
             time0 = time.time()
             while time.time() - time0 < wait:

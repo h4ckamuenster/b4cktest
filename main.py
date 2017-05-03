@@ -6,6 +6,6 @@ Created on Sun Apr 23 16:46:10 2017
 """
 import update_eth_timeline as updater
 
-updater.update_thread.start()
-#updater.upload_thread.start()
+#updater.update_thread.start()
+updater.upload_thread.start()
 
