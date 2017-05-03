@@ -74,3 +74,19 @@ def delete_all():
     del shares
     del trades
     del gain
+
+
+vec = np.linspace(1,10,10)
+
+
+for j in iter(vec):
+    print('Schleife j = ',j)
+    for i in iter(vec):
+        try:
+            print i
+            if i > 5:
+                raise ValueError
+        except ValueError:
+            print('Aus is')
+            break
+
