@@ -134,6 +134,7 @@ def upload_file(wait = 180, ftp_server = ftp_server, user = user, password = pas
             if file_busy == False:
                 file_busy = True
                 try:
+                    print("Uploading file...")
                     ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath)
                     print("File uploaded.")
                 except:
