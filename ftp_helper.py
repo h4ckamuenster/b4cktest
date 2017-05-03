@@ -11,7 +11,7 @@ import ftplib
 import urllib.request
 
 
-def upload_to_ftp(server = None, user = None, password = None, filepath = None, serverpath = None):
+def upload_to_ftp(server = None, user = None, password = None, filepath = None, serverpath = None, blocksize = 8192):
     #Upload a file to ftp server
     #server: ftp server
     #filepath: local path of the file including its name
@@ -21,7 +21,7 @@ def upload_to_ftp(server = None, user = None, password = None, filepath = None, 
         return
     session = ftplib.FTP(server, user, password)
     file = open(filepath, 'rb')
-    session.storbinary('STOR '+serverpath, file)
+    session.storbinary('STOR '+serverpath, file, blocksize = blocksize)
     file.close()
     session.quit()
     

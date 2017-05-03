@@ -13,12 +13,18 @@ import threading
 import matplotlib.pylab as pylab
 import ftp_helper as ftp
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog#
 
 k = krakenex.API() #paloaltomünster
 c = krakenex.Connection()
 
-assetpairs = k.query_public('AssetPairs')['result']
+assetpairs = None
+
+while(assetpairs == None):
+    try:
+        assetpairs = k.query_public('AssetPairs')['result']
+    except:
+        pass
 asset_ = 'XETHZEUR'    
 asset = assetpairs[asset_]
 
@@ -83,7 +89,7 @@ def update_price(wait = 90, loop = True, filename = 'results', interval = 1, fil
     ftp_server = lines[0].split('\n')[0]
     user = lines[1].split('\n')[0]
     password = lines[2]
-    
+    file.close()
     #Main loop
     while(abort == False):
         if loop == False:
@@ -93,6 +99,7 @@ def update_price(wait = 90, loop = True, filename = 'results', interval = 1, fil
         
         #Writing results
         numpy.savetxt(filename + '.txt',time_closes_array)
+        print("New file saved.")
         
         #Converting to readable format
         max_time = max(times)
@@ -109,21 +116,24 @@ def update_price(wait = 90, loop = True, filename = 'results', interval = 1, fil
         
         time0 = time.time()
         
-        if os.path.isfile(filepath):
-            try:
-                print("Uploading file...")
-                ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath)
-                print("File uploaded.")
-            except:
-                print("Could not upload file. Retry in " + str(wait) + " seconds...")
-        else:
-            print("No such file.")
-            pass
+#        if os.path.isfile(filepath):
+#            filesize = os.path.getsize(filepath)
+#            print("filesize: " + str(filesize))
+#            blocksize = 8192
+#            while blocksize < filesize:
+#                blocksize = blocksize * 2
+#            print("=> blocksize: " + str(blocksize))
+#            print("Uploading file...")
+#            ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath, blocksize = blocksize)
+#            print("File uploaded.")            
+#        else:
+#            print("No such file.")
+#            pass
         
         time_passed = time.time() - time0
         while time_passed < wait:
             if(abort == False):
-                print('Waiting ' + str(time_passed) + ' more seconds...')
+                print('Waiting ' + str(wait - time_passed) + ' more seconds...')
                 time_passed = time.time() - time0
                 time.sleep(10)                
             else:
