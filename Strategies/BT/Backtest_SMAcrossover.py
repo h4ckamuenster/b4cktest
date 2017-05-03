@@ -81,6 +81,7 @@ class myBacktest_SMA_crossOver(object):
     def SMA_crossOver(self):
         # computes the portfolio according to simple moving average, uses only ShortMean()
 
+        self.__portfolio = np.zeros(len(self.__time_series))
         self.__long_mean = self.__getRollingMean(self.__window_long)
         self.__short_mean = self.__getRollingMean(self.__window_short)
 
@@ -101,8 +102,12 @@ class myBacktest_SMA_crossOver(object):
                 elif self.__position == False:
                     # do nothing for now
                     self.__downPortfolio(i)
-        print("nach SMA: ", self.__portfolio)
 
+            if self.__portfolio[i] < 0.0:
+                print('Skip loop, negative portfolio')
+                break
+
+        print("nach SMA: ", self.__portfolio[-1])
 
     def returnSMA_crossOver(self, window_long, window_short = 1):
         ''' if short = 1 --> cross over with time series!'''
@@ -112,6 +117,7 @@ class myBacktest_SMA_crossOver(object):
 
         #print("Window: ",  self.__window )
         self.SMA_crossOver()
+
         return pd.DataFrame(self.__portfolio, columns=['portfolio']), pd.DataFrame(self.__gain, columns=['gain']), \
                pd.DataFrame(self.__shares, columns=['shares']), pd.DataFrame(self.__trades, columns=['trades'])
 
@@ -137,7 +143,6 @@ class myBacktest_SMA_crossOver(object):
         __best_gain = []
         __best_shares = []
 
-        print(__window_long_max)
 
         # iterate over the two window lengths
         for i in range(__window_long_min, __window_long_max, __long_interval):
@@ -159,16 +164,23 @@ class myBacktest_SMA_crossOver(object):
                 print("new_portfolio last: ", __new_portfolio[-1])
 
                 if __tmp_portfolio_old[-1] < __new_portfolio[-1]:
-                    __best_trades = self.__trades[:]
+                    __best_trades = copy.deepcopy(self.__trades)
                     __best_portfolio = copy.deepcopy(__new_portfolio)
                     __bestWindow_long = i
                     __bestWindow_short = j
                     __best_gain = copy.deepcopy(self.__gain)
                     __best_shares = copy.deepcopy(self.__shares)
                     __tmp_portfolio_old = copy.deepcopy(__best_portfolio)
+                    filename = ('best_portfolio_'+str(i)+'_'+str(j)+'.csv')
+                    pd.DataFrame.to_csv(pd.DataFrame(__best_portfolio), filename)
                 print("tmp_old:", __tmp_portfolio_old[-1])
                 print("best portfolio:", __best_portfolio[-1])
                 print(" ")
 
-        return  pd.DataFrame(__best_portfolio, columns=['best_portfolio']), pd.DataFrame(__best_gain) ,pd.DataFrame(__best_shares),  \
-                pd.DataFrame(__best_trades),  __bestWindow_long, __bestWindow_short
+
+        __output = pd.DataFrame(__best_portfolio, columns=['best_portfolio'])
+        __output['bes_shares'] = pd.DataFrame(__best_shares)
+        __output['best_trades'] = pd.DataFrame(__best_trades)
+        __output['best_gain'] = pd.DataFrame(__best_gain)
+
+        return  __output,  __bestWindow_long, __bestWindow_short

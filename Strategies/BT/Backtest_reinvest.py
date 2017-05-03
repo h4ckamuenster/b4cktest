@@ -20,8 +20,11 @@ class myBacktest_SMAreinvest(object):
     def __init__(self, time_series, investment=1000, transaction_fee=0.0):
 
         self.__time_series = time_series
-        self.__shares=np.zeros(len(self.__time_series))
-        self.__trades = np.zeros(len(self.__time_series))  # set up the trading vector, simply [-1 , 1]
+        self.__shares = np.zeros(len(self.__time_series))
+
+        self.__trades = np.zeros(len(self.__time_series))    # set up the trading vector, simply [-1 , 1]
+        self.__portfolio = []                                 # set up the portfolio vector
+        self.__costs = np.zeros(len(self.__time_series))
 
         self.__investment = investment
         self.__transaction_fee = transaction_fee
@@ -30,35 +33,41 @@ class myBacktest_SMAreinvest(object):
         self.__winMin = []
         self.__winMax = []
         self.__interval = []
-        self.__current_fee =[]
-
-        # set up the portfolio vector with the investment
-        self.__portfolio = np.ones(len(self.__time_series)) * self.__investment
+        self.__window_long = []
+        self.__window_short = []
+        self.__long_mean = []
+        self.__short_mean = []
+        self.__current_fee = []
         self.__position = False
 
-    def getRollingMean(self):
-        #self.__window = window
-        self.__short_mean = self.__time_series.rolling(self.__window).mean()
-        return pd.DataFrame(self.__short_mean)
+    def __getRollingMean(self,__window):
+        __rolling_mean = self.__time_series.rolling(__window).mean()
+        return __rolling_mean
 
-    def getRollingStd(self):
-        #self.__window = window
+    def returnRollingStd(self):
         __rol_std = self.__time_series.rolling(self.__window).std()
-        return pd.DataFrame(__rol_std)
+        return pd.DataFrame(__rol_std, columns=['Rolling Std'])
+
+    def returnRollingMean(self, window):
+        print(window)
+        __rolling_mean = self.__getRollingMean(window)
+        __rolling_df = pd.DataFrame(__rolling_mean)
+        return __rolling_df
 
     def __enterMarket(self, pos):
         # portfolio contains here already the investment sum
-        self.__current_fee = self.__portfolio[pos-1] * self.__transaction_fee
-        self.__shares[pos] = (self.__portfolio[pos-1] - self.__current_fee) / self.__time_series[pos]
-        self.__portfolio[pos] = (self.__shares[pos] * self.__time_series[pos])
+        #self.__current_fee = self.__portfolio[pos-1] * self.__transaction_fee
+        self.__shares[pos] = (self.__portfolio[pos-1] ) / self.__time_series[pos]
+        self.__portfolio[pos] = (self.__shares[pos] * self.__time_series[pos]) * (1.0 - self.__transaction_fee)
+        self.__costs[pos] = self.__costs[pos-1] + (self.__shares[pos] * self.__time_series[pos]) * self.__transaction_fee
         self.__trades[pos] = 1
         self.__position = True
-        #print('buy at: $%.2f' % self.__time_series[pos])
 
     def __exitMarket(self, pos):
-        self.__current_fee = (self.__shares[pos-1] * self.__time_series[pos]) * self.__transaction_fee
-        self.__portfolio[pos] = self.__shares[pos-1] * self.__time_series[pos] - self.__current_fee
+       # self.__current_fee = (self.__shares[pos-1] * self.__time_series[pos]) * self.__transaction_fee
+        self.__portfolio[pos] = self.__shares[pos-1] * self.__time_series[pos] * (1.0 - self.__transaction_fee)
         self.__shares[pos] = 0
+        self.__costs[pos] = self.__costs[pos-1] + (self.__shares[pos] * self.__time_series[pos]) * self.__transaction_fee
         self.__trades[pos] = -1  # indicates a short position in the trading history
         self.__position = False      # we are out of the game
 
@@ -66,19 +75,30 @@ class myBacktest_SMAreinvest(object):
         self.__shares[pos] = self.__shares[pos - 1]
         self.__portfolio[pos] = self.__shares[pos]* self.__time_series[pos]
         self.__position = True   # wir haben coins
+        self.__costs[pos] = self.__costs[pos - 1]
 
     def __downPortfolio(self, pos):
         self.__portfolio[pos] = self.__portfolio[pos - 1]
         self.__shares[pos] = 0
         self.__position = False  # wir haben keine coins
+        self.__costs[pos] = self.__costs[pos - 1]
 
-    def SMA(self):
+    def SMA_crossOver(self):
         # computes the portfolio according to simple moving average, uses only ShortMean()
 
-        self.getRollingMean()
+        self.__long_mean = self.__getRollingMean(self.__window_long)
+        self.__short_mean = self.__getRollingMean(self.__window_short)
 
-        for i in range((self.__window +1), len(self.__time_series)):        ## hier muss noch was rein, um von beliebigem index zu starten
-            if self.__time_series[i] > self.__short_mean[i-1]:
+        self.__position = False
+
+        self.__portfolio = []
+        self.__portfolio = np.ones(len(self.__time_series))*self.__investment
+        self.__costs = np.zeros(len(self.__time_series))
+        self.__shares = np.zeros(len(self.__time_series))
+
+        for i in range((self.__window_long+1), len(self.__time_series)):        ## hier muss noch was rein, um von beliebigem index zu starten
+           # print(i, self.__trades[i])
+            if self.__short_mean[i] > self.__long_mean[i]:
                 if self.__position == False:
                     # our position is short and we want to buy
                     self.__enterMarket(i)
@@ -86,62 +106,97 @@ class myBacktest_SMAreinvest(object):
                     # we hold a position and don't want to sell: portfolio is increasing
                     self.__updatePortfolio(i)
 
-            elif self.__time_series[i] <= self.__short_mean[i-1]:
+            elif self.__short_mean[i] <= self.__long_mean[i]:
                 if self.__position == True:
                     # we should get out of the market and sell:
                     self.__exitMarket(i)
                 elif self.__position == False:
                     # do nothing for now
                     self.__downPortfolio(i)
-        print("nach SMA: ", self.__portfolio)
+            #while True:
+            #    try:
+            #        self.__portfolio[i] >= 0.0
+            #    except StopIteration:
+            #       print('Alles Geld ist weg!')
+
+            # Raise VAlueError, falls negatives Portfolio -> game over
+            #if : raise ValueError,
+
+        print("nach SMA: ", self.__portfolio[-1])
 
 
-       ## pd.DataFrame.to_csv(pd.DataFrame(self.__portfolio),'Portfolio.csv')
+    def returnSMA_crossOver(self, window_long, window_short = 1):
+        ''' if short = 1 --> cross over with time series!'''
+        '''returns: portfolio, gain, shares, trades in DataFrame format'''
+        self.__window_long = window_long
+        self.__window_short = window_short
 
-    def returnSMA(self, window):
-        self.__window = window
-        print("Window: "+ self.__window)
-        self.SMA()
-        return pd.DataFrame(self.__portfolio), pd.DataFrame(self.__shares), pd.DataFrame(self.__trades)
+        #print("Window: ",  self.__window )
+        self.SMA_crossOver()
+
+        return pd.DataFrame(self.__portfolio, columns=['portfolio']),  \
+               pd.DataFrame(self.__shares, columns=['shares']), pd.DataFrame(self.__trades, columns=['trades'])
 
 
-    def optimize_SMA(self,Min,Max,interval):
+    def optimize_SMAcrossover(self, window_long_min, window_long_max, long_interval, window_short_min=1,
+                              window_short_max=1, short_interval=1):
         '''should optimize the window for the best SMA'''
 
-        __Min = Min
-        __Max = Max
-        __interval = interval
+        __window_long_min = window_long_min
+        __window_long_max = window_long_max
+        __long_interval = long_interval
+        __window_short_min = window_short_min
+        __window_short_max = window_short_max
+        __short_interval = short_interval
 
-        __bestWindow = 0
+        __bestWindow_long = 0
+        __bestWindow_short = 0
 
-        __tmp_portfolio_old = np.array([0,0])
-        __best_portfolio = np.array([0,0])
+        ## Initialize
+        __tmp_portfolio_old = np.array([0, 0])
+        __best_portfolio = np.array([0, 0])
         __best_trades = []
-        __best_gain = []
         __best_shares = []
 
-        for i in range(__Min,__Max,__interval):
 
-            self.__window = i
-            print("window: ", self.__window)
-            ## ******************
-            self.SMA()
-            ## ******************
-            __new_portfolio = copy.deepcopy(self.__portfolio)
+        # iterate over the two window lengths
+        for i in range(__window_long_min, __window_long_max, __long_interval):
+            # assign long window
+            self.__window_long = i
 
-            print("new_portfolio last: ", self.__portfolio[-1])
+            for j in range(__window_short_min, __window_short_max, __short_interval):
+                # assign short window
+                self.__window_short = j
 
-            if __tmp_portfolio_old[-1] < __new_portfolio[-1]:
-                __best_trades = self.__trades[:]
-                __best_portfolio = copy.deepcopy(__new_portfolio)
-                __bestWindow = i
-                __best_gain = copy.deepcopy(self.__gain)
-                __best_shares = copy.deepcopy(self.__shares)
-                __tmp_portfolio_old = copy.deepcopy(__best_portfolio)
-            print("tmp_old:", __tmp_portfolio_old[-1])
-            print("best portfolio:", __best_portfolio[-1])
+                print("window short: ", j)
+                print("window long: ", i)
 
-        return  pd.DataFrame(__best_portfolio), pd.DataFrame(__best_trades), pd.DataFrame(__best_gain), \
-                pd.DataFrame(__best_shares), __bestWindow
+                ## ******************
+                self.SMA_crossOver()
+                ## ******************
+                __new_portfolio = copy.deepcopy(self.__portfolio)
+
+                print("new_portfolio last: ", __new_portfolio[-1])
+
+                if __tmp_portfolio_old[-1] < __new_portfolio[-1]:
+                    __best_trades = copy.deepcopy(self.__trades)
+                    __best_portfolio = copy.deepcopy(__new_portfolio)
+                    __bestWindow_long = i
+                    __bestWindow_short = j
+                    __best_shares = copy.deepcopy(self.__shares)
+                    __best_cost = copy.deepcopy(self.__costs)
+                    __tmp_portfolio_old = copy.deepcopy(__best_portfolio)
+                    filename=('best_portfolio_'+str(i)+'_'+str(j)+'.csv')
+                    pd.DataFrame.to_csv(pd.DataFrame(__best_portfolio),filename)
+                print("tmp_old:", __tmp_portfolio_old[-1])
+                print("best portfolio:", __best_portfolio[-1])
+                print(" ")
+
+        __output = pd.DataFrame(__best_portfolio, columns=['best_portfolio'])
+        __output['bes_shares'] = pd.DataFrame(__best_shares)
+        __output['best_trades'] = pd.DataFrame(__best_trades)
+        __output['best_costs'] = pd.DataFrame(__best_cost)
+
+        return  __output,  __bestWindow_long, __bestWindow_short
 
 
