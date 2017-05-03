@@ -26,12 +26,13 @@ file_busy = False
 file_upload_rdy = False
 
 def get_closes(api = k, interval = 1, filename = 'results.txt'):
+    global c
     timeline_raw = None
     while timeline_raw == None:
         try:
-            timeline_raw = k.query_public('OHLC', req = {'pair':asset_, 'interval':interval})['result'][asset_]
+            timeline_raw = api.query_public('OHLC', req = {'pair':asset_, 'interval':interval})['result'][asset_]
         except:
-            k = krakenex.API() #paloaltomünster
+            api = krakenex.API() #paloaltomünster
             c = krakenex.Connection()
             time.sleep(10)
     times = []
