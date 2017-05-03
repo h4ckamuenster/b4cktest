@@ -6,6 +6,7 @@ from datetime import datetime
 import threading
 import time
 
+current_time = time.strftime("%m.%d.%y_%H:%M", time.localtime())
 
 class stream_series(threading.Thread):
     def __init__(self, URL, timeInterval=10):

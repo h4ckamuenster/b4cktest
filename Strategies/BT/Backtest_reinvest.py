@@ -14,7 +14,7 @@ class myBacktest_SMAreinvest(object):
         
          Whole margin is reinvested. Zero Risk Aversion and Maximum Gain!
               
-        @author: M_inger
+        @author: mhansinger
     '''
 
     def __init__(self, time_series, investment=1000, transaction_fee=0.0):
