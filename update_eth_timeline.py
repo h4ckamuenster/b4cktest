@@ -54,8 +54,8 @@ def get_closes(api = k, interval = 1, filename = 'results.txt'):
     
     if os.path.isfile(filename):
         old_file = numpy.loadtxt(filename)
-        old_times = old_file[0]
-        old_closes = old_file[1] 
+        old_times = old_file[:,0]
+        old_closes = old_file[:,1] 
         old_max_time = old_times.max()
     else:
         old_max_time = 0
@@ -64,6 +64,7 @@ def get_closes(api = k, interval = 1, filename = 'results.txt'):
     new_closes = []
     
     if 'old_file' in locals():
+        print("Combining old and new data...")
         for time_ in old_times:
             new_times.append(time_)
         for close in old_closes:
