@@ -98,7 +98,12 @@ def update_price(wait = 90, loop = True, filename = 'results_eth', interval = 1,
     ftp_server = lines[0].split('\n')[0]
     user = lines[1].split('\n')[0]
     password = lines[2]
+    download_source = lines[3]
     file.close()
+    
+    print("Downloading current data...")
+    ftp.download_via_url( url = download_source + filename + '.txt', localpath = filename + '.txt')
+    print("Download successful.")
     
     #Main loop
     while(abort == False):
@@ -106,15 +111,15 @@ def update_price(wait = 90, loop = True, filename = 'results_eth', interval = 1,
             abort = True
         times, closes, old_max_time, new_entries = get_closes(interval = interval, filename=filename + '.txt')
         time_closes_array = numpy.array([times,closes]).T
+                                        
+        #Writing results
+        numpy.savetxt(filename + '.txt',time_closes_array)
+        print("New file saved.")        
         
         to_upload_times = times[-new_entries:]
         to_upload_closes = closes[-new_entries:]
         upload_array = numpy.array([to_upload_times, to_upload_closes]).T
-                
-        #Writing results
-        numpy.savetxt(filename + '.txt',time_closes_array)
-        print("New file saved.")
-        
+                        
         #Writing file to upload
         numpy.savetxt(filename + '_updates.txt', upload_array)
         print("Update file saved.")
