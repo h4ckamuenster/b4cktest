@@ -62,7 +62,7 @@ def get_closes(api = k, interval = 1, filename = 'results.txt'):
     
     new_times = []
     new_closes = []
-    
+    n = 0
     if 'old_file' in locals():
         print("Combining old and new data...")
         for time_ in old_times:
@@ -71,13 +71,15 @@ def get_closes(api = k, interval = 1, filename = 'results.txt'):
             new_closes.append(close)
         for i, time_ in enumerate(times):        
             if time_ > old_max_time:
+                n += 1
                 new_times.append(time_)
                 new_closes.append(closes[i])
     else:
         for i, time_ in enumerate(times):
+            n += 1
             new_times.append(time_)
             new_closes.append(closes[i])
-    new_entries = i
+    new_entries = n
     print('Closes cached')
     return new_times, new_closes, old_max_time,new_entries
 
@@ -143,7 +145,8 @@ def update_price(wait = 90, loop = True, filename = 'results_eth', interval = 1,
         if os.path.isfile(filepath):
             print("Uploading file...")
             ftp.append_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath)
-            print("File uploaded.")            
+            print("File uploaded.")        
+            print("Added " + str(new_entries) + " new values.")
         else:
             print("No such file.")
             pass
