@@ -14,7 +14,7 @@ class myBacktest_SMAreinvest(object):
         
          Whole margin is reinvested. Zero Risk Aversion and Maximum Gain!
               
-        @author: M_inger
+        @author: mhansinger
     '''
 
     def __init__(self, time_series, investment=1000, transaction_fee=0.0):
@@ -38,6 +38,7 @@ class myBacktest_SMAreinvest(object):
         self.__long_mean = []
         self.__short_mean = []
         self.__current_fee = []
+        self.best_data = []
         self.__position = False
 
     def __getRollingMean(self,__window):
@@ -113,14 +114,9 @@ class myBacktest_SMAreinvest(object):
                 elif self.__position == False:
                     # do nothing for now
                     self.__downPortfolio(i)
-            #while True:
-            #    try:
-            #        self.__portfolio[i] >= 0.0
-            #    except StopIteration:
-            #       print('Alles Geld ist weg!')
-
-            # Raise VAlueError, falls negatives Portfolio -> game over
-            #if : raise ValueError,
+            if self.__portfolio[i] < 0.0:
+               print('Skip loop, negative portfolio')
+               break
 
         print("nach SMA: ", self.__portfolio[-1])
 
@@ -136,7 +132,6 @@ class myBacktest_SMAreinvest(object):
 
         return pd.DataFrame(self.__portfolio, columns=['portfolio']),  \
                pd.DataFrame(self.__shares, columns=['shares']), pd.DataFrame(self.__trades, columns=['trades'])
-
 
     def optimize_SMAcrossover(self, window_long_min, window_long_max, long_interval, window_short_min=1,
                               window_short_max=1, short_interval=1):
@@ -157,7 +152,6 @@ class myBacktest_SMAreinvest(object):
         __best_portfolio = np.array([0, 0])
         __best_trades = []
         __best_shares = []
-
 
         # iterate over the two window lengths
         for i in range(__window_long_min, __window_long_max, __long_interval):
@@ -196,7 +190,8 @@ class myBacktest_SMAreinvest(object):
         __output['bes_shares'] = pd.DataFrame(__best_shares)
         __output['best_trades'] = pd.DataFrame(__best_trades)
         __output['best_costs'] = pd.DataFrame(__best_cost)
+        self.best_data = __output
 
-        return  __output,  __bestWindow_long, __bestWindow_short
+        return  self.best_data,  __bestWindow_long, __bestWindow_short
 
 
