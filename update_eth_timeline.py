@@ -15,8 +15,14 @@ import ftp_helper as ftp
 import tkinter as tk
 from tkinter import filedialog#
 
-k = krakenex.API() #paloaltomünster
-c = krakenex.Connection()
+print('Connecting to kraken...')
+while not 'k' in locals():
+    try:        
+        k = krakenex.API() #paloaltomünster
+        c = krakenex.Connection()
+    except:
+        pass
+print('Connected to kraken.')
 
 assetpairs = None
 
@@ -51,6 +57,8 @@ def get_closes(api = k, interval = 1, filename = 'results.txt'):
         old_times = old_file[0]
         old_closes = old_file[1] 
         old_max_time = old_times.max()
+    else:
+        old_max_time = 0
     
     new_times = []
     new_closes = []
@@ -68,13 +76,14 @@ def get_closes(api = k, interval = 1, filename = 'results.txt'):
         for i, time_ in enumerate(times):
             new_times.append(time_)
             new_closes.append(closes[i])
+    new_entries = i
     print('Closes cached')
-    return new_times, new_closes
+    return new_times, new_closes, old_max_time,new_entries
 
 
         
 abort = False        
-def update_price(wait = 90, loop = True, filename = 'results', interval = 1, filepath = 'results.txt', serverpath = 'results.txt'):
+def update_price(wait = 90, loop = True, filename = 'results_eth', interval = 1, filepath = 'results_eth_updates.txt', serverpath = 'results_eth.txt'):
     global abort
     global file_busy
 
@@ -90,16 +99,25 @@ def update_price(wait = 90, loop = True, filename = 'results', interval = 1, fil
     user = lines[1].split('\n')[0]
     password = lines[2]
     file.close()
+    
     #Main loop
     while(abort == False):
         if loop == False:
             abort = True
-        times,closes = get_closes(interval = interval, filename=filename + '.txt')
-        time_closes_array = numpy.array([times,closes])
+        times, closes, old_max_time, new_entries = get_closes(interval = interval, filename=filename + '.txt')
+        time_closes_array = numpy.array([times,closes]).T
         
+        to_upload_times = times[-new_entries:]
+        to_upload_closes = closes[-new_entries:]
+        upload_array = numpy.array([to_upload_times, to_upload_closes]).T
+                
         #Writing results
         numpy.savetxt(filename + '.txt',time_closes_array)
         print("New file saved.")
+        
+        #Writing file to upload
+        numpy.savetxt(filename + '_updates.txt', upload_array)
+        print("Update file saved.")
         
         #Converting to readable format
         max_time = max(times)
@@ -116,19 +134,13 @@ def update_price(wait = 90, loop = True, filename = 'results', interval = 1, fil
         
         time0 = time.time()
         
-#        if os.path.isfile(filepath):
-#            filesize = os.path.getsize(filepath)
-#            print("filesize: " + str(filesize))
-#            blocksize = 8192
-#            while blocksize < filesize:
-#                blocksize = blocksize * 2
-#            print("=> blocksize: " + str(blocksize))
-#            print("Uploading file...")
-#            ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath, blocksize = blocksize)
-#            print("File uploaded.")            
-#        else:
-#            print("No such file.")
-#            pass
+        if os.path.isfile(filepath):
+            print("Uploading file...")
+            ftp.append_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath)
+            print("File uploaded.")            
+        else:
+            print("No such file.")
+            pass
         
         time_passed = time.time() - time0
         while time_passed < wait:
@@ -140,51 +152,5 @@ def update_price(wait = 90, loop = True, filename = 'results', interval = 1, fil
                 print("aborted")
                 break        
 
-#ftp_server = ''
-#user = ''
-#password = ''
-        
-#def upload_file(wait = 180, ftp_server = ftp_server, user = user, password = password, filepath = 'results.txt', serverpath = 'results.txt'):
-#    global abort
-#    global file_busy
-#    global file_upload_rdy
-#    root = tk.Tk()
-#    root.withdraw()
-#    chosen_file_path = filedialog.askopenfilename()
-#    file = open(chosen_file_path)
-#    lines = []
-#    for line in file:
-#        lines.append(line)
-#    ftp_server = lines[0].split('\n')[0]
-#    user = lines[1].split('\n')[0]
-#    password = lines[2]
-#    file_upload_rdy = True
-#    while(abort == False):
-#        if os.path.isfile(filepath):
-#            while(file_busy == True):
-#                time.sleep(5)
-#                print("File busy. Upload waiting...")
-#            if file_busy == False:
-#                file_busy = True
-#                try:
-#                    print("Uploading file...")
-#                    ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = filepath, serverpath=serverpath)
-#                    print("File uploaded.")
-#                except:
-#                    print("Could not upload file. Retry in " + str(wait) + " seconds...")
-#                file_busy = False
-#            time0 = time.time()
-#            while time.time() - time0 < wait:
-#                if(abort == False):
-#                    time.sleep(10)
-#                else:
-#                    print("aborted")
-#                    break
-#        else:
-#            print("No such file.")
-#            time.sleep(2)
-#            pass
-        
-
 update_thread = threading.Thread(target = update_price)
-#upload_thread = threading.Thread(target = upload_file)
+
