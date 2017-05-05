@@ -13,6 +13,8 @@ class myBacktest_SMAreinvest(object):
                         needs as input: maximum window, minimum window, interval
         
          Whole margin is reinvested. Zero Risk Aversion and Maximum Gain!
+         
+         IMPORTANT: time_series has to be pandas.Series !
               
         @author: mhansinger
     '''
@@ -25,6 +27,7 @@ class myBacktest_SMAreinvest(object):
         self.__trades = np.zeros(len(self.__time_series))    # set up the trading vector, simply [-1 , 1]
         self.__portfolio = []                                 # set up the portfolio vector
         self.__costs = np.zeros(len(self.__time_series))
+        self.__log_returns = np.zeros(len(self.__time_series))
 
         self.__investment = investment
         self.__transaction_fee = transaction_fee
@@ -40,6 +43,14 @@ class myBacktest_SMAreinvest(object):
         self.__current_fee = []
         self.best_data = []
         self.__position = False
+
+        # check for data type
+        try:
+            if type(time_series)!= pd.core.series.Series:
+                raise TypeError
+        except TypeError as err:
+            print('Die Zeitreihe muss im Format: pd.core.series.Series sein.')
+            print('z.B.: pd.Series(Deine_Zeitreihe)')
 
     def __getRollingMean(self,__window):
         __rolling_mean = self.__time_series.rolling(__window).mean()
@@ -84,6 +95,9 @@ class myBacktest_SMAreinvest(object):
         self.__position = False  # wir haben keine coins
         self.__costs[pos] = self.__costs[pos - 1]
 
+    def __log_return(self,pos):
+        self.__log_returns[pos] = np.log(self.__time_series[pos]/self.__time_series[pos-1])
+
     def SMA_crossOver(self):
         # computes the portfolio according to simple moving average, uses only ShortMean()
 
@@ -99,6 +113,10 @@ class myBacktest_SMAreinvest(object):
 
         for i in range((self.__window_long+1), len(self.__time_series)):        ## hier muss noch was rein, um von beliebigem index zu starten
            # print(i, self.__trades[i])
+
+            # compute log returns
+            self.__log_return(i)
+
             if self.__short_mean[i] > self.__long_mean[i]:
                 if self.__position == False:
                     # our position is short and we want to buy
@@ -114,6 +132,7 @@ class myBacktest_SMAreinvest(object):
                 elif self.__position == False:
                     # do nothing for now
                     self.__downPortfolio(i)
+
             if self.__portfolio[i] < 0.0:
                print('Skip loop, negative portfolio')
                break
@@ -131,7 +150,8 @@ class myBacktest_SMAreinvest(object):
         self.SMA_crossOver()
 
         return pd.DataFrame(self.__portfolio, columns=['portfolio']),  \
-               pd.DataFrame(self.__shares, columns=['shares']), pd.DataFrame(self.__trades, columns=['trades'])
+               pd.DataFrame(self.__shares, columns=['shares']), pd.DataFrame(self.__trades, columns=['trades']), \
+               pd.DataFrame(self.__log_returns, columns=['log returns'])
 
     def optimize_SMAcrossover(self, window_long_min, window_long_max, long_interval, window_short_min=1,
                               window_short_max=1, short_interval=1):
@@ -152,6 +172,7 @@ class myBacktest_SMAreinvest(object):
         __best_portfolio = np.array([0, 0])
         __best_trades = []
         __best_shares = []
+        __best_returns = []
 
         # iterate over the two window lengths
         for i in range(__window_long_min, __window_long_max, __long_interval):
@@ -180,6 +201,7 @@ class myBacktest_SMAreinvest(object):
                     __best_shares = copy.deepcopy(self.__shares)
                     __best_cost = copy.deepcopy(self.__costs)
                     __tmp_portfolio_old = copy.deepcopy(__best_portfolio)
+                    __best_returns = copy.deecopy(self.__log_returns)
                     filename=('best_portfolio_'+str(i)+'_'+str(j)+'.csv')
                     pd.DataFrame.to_csv(pd.DataFrame(__best_portfolio),filename)
                 print("tmp_old:", __tmp_portfolio_old[-1])
@@ -190,6 +212,7 @@ class myBacktest_SMAreinvest(object):
         __output['bes_shares'] = pd.DataFrame(__best_shares)
         __output['best_trades'] = pd.DataFrame(__best_trades)
         __output['best_costs'] = pd.DataFrame(__best_cost)
+        __output['best_returns'] = pd.DataFrame(__best_returns)
         self.best_data = __output
 
         return  self.best_data,  __bestWindow_long, __bestWindow_short
