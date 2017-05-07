@@ -41,7 +41,7 @@ def get_multi_closes(api = k, interval = 1, assets = assets_):
         timeline_raw = None
         while timeline_raw == None:
             try:
-                print(asset_ + ": Asking for closes...")
+                print("\n" + asset_ + ": Asking for closes...")
                 timeline_raw = api.query_public('OHLC', req = {'pair':asset_, 'interval':interval})['result'][asset_]
             except:
                 api = krakenex.API() #paloaltomünster
