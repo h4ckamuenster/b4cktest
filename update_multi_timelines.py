@@ -128,6 +128,10 @@ def multi_update_price(wait = 10 * 60, loop = True, assets = assets_ , interval 
             print(asset_ + ": No online data available.")
     print("All online resources considered.")
     
+    paths = []
+    for asset_ in assets:
+        paths.append(asset_ + ".txt")
+    
     #Main loop
     while(abort == False):
         if loop == False:
@@ -163,15 +167,10 @@ def multi_update_price(wait = 10 * 60, loop = True, assets = assets_ , interval 
             pylab.savefig(asset_ + '.jpg', dpi = 300)
             print(asset_ + ': Plot updated')
             
-            #Update file to server            
-            if os.path.isfile(asset_ + ".txt"):
-                print(asset_ + ": Uploading file...")
-                ftp.append_to_ftp(server = ftp_server, user = user, password = password, filepath = asset_ + ".txt", serverpath= asset_ + ".txt")
-                print(asset_ + ": File uploaded.")        
-                print(asset_ + ": Added " + str(new_entries) + " new values.")
-            else:
-                print(asset_ + ": No such file.")
-                pass
+        #Update files to server            
+        print("Uploading files...")
+        ftp.multi_append_to_ftp(server = ftp_server, user = user, password = password, filepaths = paths, serverpaths = paths)
+        print("Files uploaded.")        
             
         time_passed = time.time() - time0
         while time_passed < wait:
