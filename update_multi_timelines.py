@@ -69,7 +69,7 @@ def get_multi_closes(api = k, interval = 1, assets = assets_):
         new_closes = []
         n = 0
         if 'old_file' in locals():
-            print(asset_ + ": Combining old and new data...")
+            print('\n' + asset_ + ": Combining old and new data...")
             for time_ in old_times:
                 new_times.append(time_)
             for close in old_closes:
@@ -87,6 +87,7 @@ def get_multi_closes(api = k, interval = 1, assets = assets_):
                 new_closes.append(closes[i])
         new_entries = n
         print(asset_ + ': Closes cached')
+        print(asset_ + ': ' + str(new_entries) + ' new entries.')
         results.append([new_times, new_closes, old_max_time, new_entries])
     return results
 
@@ -111,7 +112,7 @@ def multi_update_price(wait = 10 * 60, loop = True, assets = assets_ , interval 
     file.close()
     
     #Upload latest asset list to ftp server
-    print("Updating asset list on server...")
+    print("\nUpdating asset list on server...")
     numpy.savetxt('assets.txt', numpy.array(assets).T, fmt = "%s")
     ftp.upload_to_ftp(server = ftp_server, user = user, password = password, filepath = 'assets.txt', serverpath = 'assets.txt')
     print("Asset list updated.")
@@ -121,16 +122,18 @@ def multi_update_price(wait = 10 * 60, loop = True, assets = assets_ , interval 
     for asset_ in assets:
         r = requests.head(download_source + asset_ + ".txt", allow_redirects=True, auth=(user, password))
         if r.status_code == 200:
-            print(asset_ + ": Downloading current data...")
+            print('\n' + asset_ + ": Downloading current data...")
             ftp.download_via_url( url = download_source + asset_ + '.txt', localpath = asset_ + '.txt')
             print(asset_ + ": Download successful.")
         else:
             print(asset_ + ": No online data available.")
     print("All online resources considered.")
     
-    paths = []
+    serverpaths = []
+    updatepaths = []
     for asset_ in assets:
-        paths.append(asset_ + ".txt")
+        serverpaths.append(asset_ + ".txt")
+        updatepaths.append(asset_ + "_updates.txt")
     
     #Main loop
     while(abort == False):
@@ -144,7 +147,7 @@ def multi_update_price(wait = 10 * 60, loop = True, assets = assets_ , interval 
                                             
             #Writing results
             numpy.savetxt(asset_ + '.txt',time_closes_array)
-            print(asset_ + ": New file saved.")        
+            print('\n' + asset_ + ": New file saved.")        
             
             to_upload_times = times[-new_entries:]
             to_upload_closes = closes[-new_entries:]
@@ -169,7 +172,7 @@ def multi_update_price(wait = 10 * 60, loop = True, assets = assets_ , interval 
             
         #Update files to server            
         print("Uploading files...")
-        ftp.multi_append_to_ftp(server = ftp_server, user = user, password = password, filepaths = paths, serverpaths = paths)
+        ftp.multi_append_to_ftp(server = ftp_server, user = user, password = password, filepaths = updatepaths, serverpaths = serverpaths)
         print("Files uploaded.")        
             
         time_passed = time.time() - time0
