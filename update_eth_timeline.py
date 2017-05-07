@@ -31,7 +31,7 @@ while(assetpairs == None):
         assetpairs = k.query_public('AssetPairs')['result']
     except:
         pass
-asset_ = 'XETHZEUR'    
+asset_ = ['XETHZEUR']
 asset = assetpairs[asset_]
 
 def get_closes(api = k, interval = 1, filename = 'results.txt'):
