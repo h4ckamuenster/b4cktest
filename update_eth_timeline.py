@@ -86,7 +86,7 @@ def get_closes(api = k, interval = 1, filename = 'results.txt'):
 
         
 abort = False        
-def update_price(wait = 90, loop = True, filename = 'results_eth', interval = 1, filepath = 'results_eth_updates.txt', serverpath = 'results_eth.txt'):
+def update_price(wait = 600, loop = True, filename = 'results_eth', interval = 1, filepath = 'results_eth_updates.txt', serverpath = 'results_eth.txt'):
     global abort
     global file_busy
 

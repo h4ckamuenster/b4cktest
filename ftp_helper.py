@@ -9,6 +9,7 @@ and get them back via url.
 
 import ftplib
 import urllib.request
+import time
 
 
 def upload_to_ftp(server = None, user = None, password = None, filepath = None, serverpath = None, blocksize = 8192):
@@ -33,11 +34,24 @@ def append_to_ftp(server = None, user = None, password = None, filepath = None, 
     if server == None or user == None or password == None or filepath == None or serverpath == None:
         print("Information missing. Aborting.")
         return
-    session = ftplib.FTP(server, user, password)
+    session = None
+    print("Connecting to ftp server...")
+    while(session == None):
+        try:
+            print("Opening session...")
+            session = ftplib.FTP(server, user, password)
+            print("Connected.")
+        except:
+            print("Retry connecting to ftp server...")
+            del session
+            session = None
+            time.sleep(3)
     file = open(filepath, 'rb')
     session.storbinary('APPE ' + serverpath, file, blocksize = blocksize)
     file.close()
     session.quit()
+
+            
     
 def download_via_url(url = None, localpath = None):
     if url == None or localpath == None:
