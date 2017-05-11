@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import copy
 import time
 
+## outdated
 
 class myBacktest_SMA(object):
 

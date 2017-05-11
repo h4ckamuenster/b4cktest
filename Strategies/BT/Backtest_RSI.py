@@ -3,16 +3,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import copy
 
-class myBacktest_SMAreinvest(object):
+class myBacktest_RSI(object):
 
     '''
-        This is a simple Backtesting strategy based on Rolling Mean
+        This is a simple Backtesting strategy based on RSI
         Funtcions to use:
             getRollingMean(): returns panda DF of the short mean
             optimize_SMA(min_window,max_window,interval): returns best_portfolio, best_trades, best_gain, best_shares, best_window
                         needs as input: maximum window, minimum window, interval
         
-         Whole margin is reinvested. Zero Risk Aversion and Maximum Gain!
+         Whole margin is re-invested. Zero Risk Aversion and Maximum Gain!
               
         @author: mhansinger
     '''
@@ -56,7 +56,6 @@ class myBacktest_SMAreinvest(object):
 
     def __enterMarket(self, pos):
         # portfolio contains here already the investment sum
-        #self.__current_fee = self.__portfolio[pos-1] * self.__transaction_fee
         self.__shares[pos] = (self.__portfolio[pos-1] ) / self.__time_series[pos]
         self.__portfolio[pos] = (self.__shares[pos] * self.__time_series[pos]) * (1.0 - self.__transaction_fee)
         self.__costs[pos] = self.__costs[pos-1] + (self.__shares[pos] * self.__time_series[pos]) * self.__transaction_fee
@@ -64,7 +63,6 @@ class myBacktest_SMAreinvest(object):
         self.__position = True
 
     def __exitMarket(self, pos):
-       # self.__current_fee = (self.__shares[pos-1] * self.__time_series[pos]) * self.__transaction_fee
         self.__portfolio[pos] = self.__shares[pos-1] * self.__time_series[pos] * (1.0 - self.__transaction_fee)
         self.__shares[pos] = 0
         self.__costs[pos] = self.__costs[pos-1] + (self.__shares[pos] * self.__time_series[pos]) * self.__transaction_fee
@@ -83,11 +81,11 @@ class myBacktest_SMAreinvest(object):
         self.__position = False  # wir haben keine coins
         self.__costs[pos] = self.__costs[pos - 1]
 
-    def SMA_crossOver(self):
+    def RSI(self):
         # computes the portfolio according to simple moving average, uses only ShortMean()
 
-        self.__long_mean = self.__getRollingMean(self.__window_long)
-        self.__short_mean = self.__getRollingMean(self.__window_short)
+        #self.__long_mean = self.__getRollingMean(self.__window_long)
+        #self.__short_mean = self.__getRollingMean(self.__window_short)
 
         self.__position = False
 
@@ -96,54 +94,37 @@ class myBacktest_SMAreinvest(object):
         self.__costs = np.zeros(len(self.__time_series))
         self.__shares = np.zeros(len(self.__time_series))
 
-        for i in range((self.__window_long+1), len(self.__time_series)):        ## hier muss noch was rein, um von beliebigem index zu starten
-           # print(i, self.__trades[i])
-            if self.__short_mean[i] > self.__long_mean[i]:
-                if self.__position == False:
-                    # our position is short and we want to buy
-                    self.__enterMarket(i)
-                elif self.__position == True:
-                    # we hold a position and don't want to sell: portfolio is increasing
-                    self.__updatePortfolio(i)
+        # initialize RSI vector
+        __RSI_vec = np.array(self.__time_series[0:len(self.__window_short)] )         #np.zeros(len(self.__window_short))
 
-            elif self.__short_mean[i] <= self.__long_mean[i]:
-                if self.__position == True:
-                    # we should get out of the market and sell:
-                    self.__exitMarket(i)
-                elif self.__position == False:
-                    # do nothing for now
-                    self.__downPortfolio(i)
-            #while True:
-            #    try:
-            #        self.__portfolio[i] >= 0.0
-            #    except StopIteration:
-            #       print('Alles Geld ist weg!')
 
-            # Raise VAlueError, falls negatives Portfolio -> game over
-            #if : raise ValueError,
+        for i in range(len(self.__window_short),len(self.__time_series)):        ## hier muss noch was rein, um von beliebigem index zu starten
+            __RSI_vec = self.__time_series[i-len(self.__window_short):i]
+
+            # Compute down and up sum
+            __sum_up = __RSI_vec[__RSI_vec > 0].sum()
+            __sum_down = __RSI_vec[__RSI_vec < 0].sum()
+
+
+
 
         print("nach SMA: ", self.__portfolio[-1])
 
 
-    def returnSMA_crossOver(self, window_long, window_short = 1):
-        ''' if short = 1 --> cross over with time series!'''
+    def returnRSI(self, window_short = 1):
         '''returns: portfolio, gain, shares, trades in DataFrame format'''
-        self.__window_long = window_long
         self.__window_short = window_short
 
         #print("Window: ",  self.__window )
-        self.SMA_crossOver()
+        self.RSI_crossOver()
 
         return pd.DataFrame(self.__portfolio, columns=['portfolio']),  \
                pd.DataFrame(self.__shares, columns=['shares']), pd.DataFrame(self.__trades, columns=['trades'])
 
 
-    def optimize_SMAcrossover(self, window_long_min, window_long_max, long_interval, window_short_min=1,
-                              window_short_max=1, short_interval=1):
+    def optimize_RSI(self, window_short_min=1, window_short_max=1, short_interval=1):
         '''should optimize the window for the best SMA'''
 
-        __window_long_min = window_long_min
-        __window_long_max = window_long_max
         __long_interval = long_interval
         __window_short_min = window_short_min
         __window_short_max = window_short_max
@@ -172,7 +153,7 @@ class myBacktest_SMAreinvest(object):
                 print("window long: ", i)
 
                 ## ******************
-                self.SMA_crossOver()
+                self.RSI_crossOver()
                 ## ******************
                 __new_portfolio = copy.deepcopy(self.__portfolio)
 
