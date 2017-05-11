@@ -201,7 +201,7 @@ class myBacktest_SMAreinvest(object):
                     __best_shares = copy.deepcopy(self.__shares)
                     __best_cost = copy.deepcopy(self.__costs)
                     __tmp_portfolio_old = copy.deepcopy(__best_portfolio)
-                    __best_returns = copy.deecopy(self.__log_returns)
+                    __best_returns = copy.deepcopy(self.__log_returns)
                     filename=('best_portfolio_'+str(i)+'_'+str(j)+'.csv')
                     pd.DataFrame.to_csv(pd.DataFrame(__best_portfolio),filename)
                 print("tmp_old:", __tmp_portfolio_old[-1])
