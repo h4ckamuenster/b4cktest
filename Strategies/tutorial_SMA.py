@@ -33,8 +33,6 @@ portf_Re, shares_Re, trades_Re = Test_SMA.returnSMA(window)
 
 
 
-
-
 def plot_all():
 
     plt.figure(1)
