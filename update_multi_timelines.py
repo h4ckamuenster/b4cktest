@@ -32,7 +32,7 @@ while(assetpairs == None):
         assetpairs = k.query_public('AssetPairs')['result']
     except:
         pass
-assets_ = ['XETHZEUR', 'XREPZEUR', 'XXRPXXBT', 'XXLMZEUR', 'XLTCZEUR', 'XXBTZEUR', 'XETCZEUR', 'XXMRZEUR', 'XETHXXBT', 'GNOEUR', 'XETCXETH', 'XZECZEUR']
+assets_ = ['XETHZEUR', 'XREPZEUR', 'XXRPXXBT', 'XXLMZEUR', 'XLTCZEUR', 'XXBTZEUR', 'XETCZEUR', 'XXMRZEUR', 'XETHXXBT', 'GNOEUR', 'XETCXETH', 'XZECZEUR'] 
 
 def get_multi_closes(api = k, interval = 1, assets = assets_):
     global c
@@ -41,7 +41,7 @@ def get_multi_closes(api = k, interval = 1, assets = assets_):
         timeline_raw = None
         while timeline_raw == None:
             try:
-                print("\n" + asset_ + ": Asking for closes...")
+                print("\n" + asset_ + ": Asking for closes...")                
                 timeline_raw = api.query_public('OHLC', req = {'pair':asset_, 'interval':interval})['result'][asset_]
             except:
                 api = krakenex.API() #paloaltomünster
@@ -94,7 +94,7 @@ def get_multi_closes(api = k, interval = 1, assets = assets_):
 
         
 abort = False        
-def multi_update_price(wait = 10 * 60, loop = True, assets = assets_ , interval = 1):
+def multi_update_price(wait = 60 * 60, loop = True, assets = assets_ , interval = 1):
     global abort
 
     #Asking for the identification file    
@@ -170,17 +170,24 @@ def multi_update_price(wait = 10 * 60, loop = True, assets = assets_ , interval 
             pylab.savefig(asset_ + '.jpg', dpi = 300)
             print(asset_ + ': Plot updated')
             
-        #Update files to server            
-        print("Uploading files...")
-        ftp.multi_append_to_ftp(server = ftp_server, user = user, password = password, filepaths = updatepaths, serverpaths = serverpaths)
-        print("Files uploaded.")        
+        #Update files to server
+        uploaded = False
+        while(uploaded == False):
+            print("Uploading files...")
+            try:
+                ftp.multi_append_to_ftp(server = ftp_server, user = user, password = password, filepaths = updatepaths, serverpaths = serverpaths)
+                print("Files uploaded.")
+                uploaded = True
+            except:
+                print("Reconnecting to server...")
+                time.sleep(2)
             
         time_passed = time.time() - time0
         while time_passed < wait:
             if(abort == False):
                 print('Waiting ' + str(wait - time_passed) + ' more seconds...')
                 time_passed = time.time() - time0
-                time.sleep(min(10, (wait - time_passed)))           
+                time.sleep(min(60, max(0.1,(wait - time_passed))))           
             else:
                 print("aborted")
                 break        
