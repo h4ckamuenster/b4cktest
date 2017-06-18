@@ -32,8 +32,8 @@ while(assetpairs == None):
         assetpairs = k.query_public('AssetPairs')['result']
     except:
         pass
-assets_ = ['XETHZEUR', 'XREPZEUR', 'XXRPXXBT', 'XXLMZEUR', 'XLTCZEUR', 'XXBTZEUR', 'XETCZEUR', 'XXMRZEUR', 'XETHXXBT', 'GNOEUR', 'XETCXETH', 'XZECZEUR'] 
-
+assets_ = ['XETHZEUR', 'XREPZEUR', 'XXRPXXBT', 'XXLMZEUR', 'XLTCZEUR', 'XXBTZEUR', 'XETCZEUR', 'XXMRZEUR', 'XETHXXBT', 'GNOEUR', 'XETCXETH', 'XZECZEUR', 'XICNXXBT', 'XXLMXXBT', 'XXMRXXBT', 'DASHXBT'] 
+"""
 def get_multi_closes(api = k, interval = 1, assets = assets_):
     global c
     results = []
@@ -194,3 +194,4 @@ def multi_update_price(wait = 60 * 60, loop = True, assets = assets_ , interval 
 
 multi_update_thread = threading.Thread(target = multi_update_price)
 
+"""
